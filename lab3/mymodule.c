@@ -2,34 +2,60 @@
 #include <linux/init.h>
 #include <linux/interrupt.h>
 
+/* BUFLEN constant increased to allow interface names above 10 chars */
 #define BUFLEN 12
 
-/*
+/* interface information from /proc/interrupts
   19:    501  0    0   17   IO-APIC   19-fasteoi   eno16777736
 */
 
 static int irq;
 static char interface[BUFLEN];
 
-
+// first parameter
 module_param_string(interface, interface, BUFLEN, 0);
 MODULE_PARM_DESC(interface, "A network interface");
 
+// second parameter
 module_param(irq, int, 0);
 MODULE_PARM_DESC(irq, "The IRQ of the network interface");
 
 static int mycount = 0;
+
+/*----------------------------------------------------------------------------
+static irqreturn_t intr_handler(int irq, void *dev_id, struct pt_regs *regs)
+
+irq 	= 	numeric value of the interrupt line the handler is servicing
+dev_id 	= 	generic pointer to the same dev_id that was given
+			to request_irq() when the interrupt handler was registered
+regs 	=	pointer to a structure containing the processor registers and state 
+			before servicing the interrupt (used for debugging)
+
+*/
 
 static irqreturn_t myinterrupt(int irq, void *dev_id, struct pt_regs *regs) {
 	if(mycount < 10) {
 		printk("Interrupt!\n");
 		mycount++;
 	}
+	// module only count interrupts, passes all calls 
 	return IRQ_NONE;
 }
 
+
+
 /* Interrupt handler */
 static int __init mymodule_init(void) {
+
+	/* Registering interrupt handler on IRQ/interface given in parameters 
+	---------------------------------------------------------------------
+	request_irq parameters are:
+	irq 			= irq given as param2
+	&myinterrupt 	= pointer to myinterrupt
+	IRQF_SHARED 	= flag (allow sharing the irq among several devices)
+	interface 		= name given as param1
+	&irq 			= id to interrupt handler
+	*/
 	if(request_irq(irq, &myinterrupt, IRQF_SHARED, interface , &irq)) {
 		printk(KERN_ERR "mymodule: cannot register IRQ%d\n", irq);
 		return -EIO;
@@ -39,9 +65,12 @@ static int __init mymodule_init(void) {
 	return 0;
 }
 
+
+
+/* Unregister module from interrupt handler */
 static void __exit mymodule_exit(void) {
 
-	/* Unregister module from interrupt handler */
+	/* free irq */
 	free_irq(irq, &irq);
 	printk("Freeing IRQ %d\n", irq);
 	return;
