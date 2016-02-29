@@ -1,3 +1,13 @@
+/* 
+Arvid Persson Moosavi
+amoosavi@kth.se
+
+Quotes and instructions borrowed from:
+http://www.crashcourse.ca/introduction-linux-kernel-programming/lesson-12-adding-proc-files-your-modules-part-2 
+http://pointer-overloading.blogspot.se/2013/09/linux-creating-entry-in-proc-file.html
+https://www.linux.com/learn/linux-training/37985-the-kernel-newbie-corner-kernel-debugging-using-proc-qsequenceq-files-part-1
+*/
+
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/interrupt.h>
@@ -33,6 +43,7 @@ regs 	=	pointer to a structure containing the processor registers and state
 
 */
 
+/* Interrupt handler */
 static irqreturn_t myinterrupt(int irq, void *dev_id, struct pt_regs *regs) {
 	if(mycount < 10) {
 		printk("Interrupt!\n");
@@ -44,7 +55,7 @@ static irqreturn_t myinterrupt(int irq, void *dev_id, struct pt_regs *regs) {
 
 
 
-/* Interrupt handler */
+/* Register interrupt */
 static int __init mymodule_init(void) {
 
 	/* Registering interrupt handler on IRQ/interface given in parameters 
@@ -52,15 +63,18 @@ static int __init mymodule_init(void) {
 	request_irq parameters are:
 	irq 			= irq given as param2
 	&myinterrupt 	= pointer to myinterrupt
-	IRQF_SHARED 	= flag (allow sharing the irq among several devices)
+	IRQF_SHARED 	= flag (allow sharing the irq among several devices).
+					  These flags used only by the kernel as part of the
+					  irq handling routines.
 	interface 		= name given as param1
 	&irq 			= id to interrupt handler
 	*/
 	if(request_irq(irq, &myinterrupt, IRQF_SHARED, interface , &irq)) {
 		printk(KERN_ERR "mymodule: cannot register IRQ%d\n", irq);
-		return -EIO;
+		return -EIO; /* I/O error */
 	}
 
+	/* else */
 	printk("Request on IRQ %d succeeded\n", irq);
 	return 0;
 }
