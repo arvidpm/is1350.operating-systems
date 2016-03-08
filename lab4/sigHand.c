@@ -1,3 +1,14 @@
+/*
+struct sigaction {
+    void         (*sa_handler)(int);      // address of signal handler
+    sigset_t     sa_mask;                 // additional signals to block
+    int          sa_flags;                // signal options
+
+    // alternate signal handler
+    void         (*sa_sigaction)(int, siginfo_t *, void*);
+};
+*/
+
 #include <stdio.h>
 #include <signal.h>
 #include <unistd.h>
