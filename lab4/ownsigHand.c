@@ -2,6 +2,17 @@
 Arvid Persson Moosavi
 amoosavi@kth.se
 
+This is a test program for signal handling.
+If the signal isn't handled properly,
+the default action is to terminate the process.
+
+The SIGUSR1 and SIGUSR2 signals are set 
+aside for you to use any way you want. 
+They’re useful for simple interprocess communication, 
+if you write a signal handler for them in the program 
+that receives the signal.
+
+---- NOT USED (sigaction) ----
 struct sigaction {
     void         (*sa_handler)(int);      // address of signal handler
     sigset_t     sa_mask;                 // additional signals to block
@@ -10,6 +21,7 @@ struct sigaction {
     // alternate signal handler
     void         (*sa_sigaction)(int, siginfo_t *, void*);
 };
+
 */
 
 #include <stdio.h>
@@ -24,7 +36,7 @@ void usr1b(int sig) {
     if (sig == SIGUSR1) {
         mycounter++;
         printf("Count: %d\r", mycounter);
-        /* flushing buffer */
+        /* flushes the output buffer of a stream (stdout). */
         fflush(stdout);
     }
 }
