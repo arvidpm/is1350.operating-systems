@@ -70,10 +70,10 @@ static void client_handler() {
         int charlen = strlen(cmd);
 
         /* Sends size of string length */
-        write(socketFD, &charlen, sizeof(charlen));
+        send(socketFD, &charlen, sizeof(charlen), 0);
         
         /* Sends length of string */
-        write(socketFD, cmd, strlen(cmd));
+        send(socketFD, cmd, strlen(cmd), 0);
 
         /* If command was "exit" we should also terminate on this side */
         if (strncmp(cmd, "exit", 4) == 0) {

@@ -35,7 +35,10 @@ static int serverFD = -1, clientFD = -1;  /* fd for server and client socket */
 
 int main(int argc, char *argv[]) {
 
-    /* TODO install signalhandler clean_up for clean termination */
+    /* signalhandler clean_up for clean termination */
+    signal(SIGQUIT, clean_up);
+    signal(SIGTERM, clean_up);
+    signal(SIGKILL, clean_up);
     
     set_up_server();
 
@@ -49,7 +52,9 @@ int main(int argc, char *argv[]) {
 static void set_up_server(void) {
     struct sockaddr_in serverINETAdress;
     
-    /* TODO create a socket to listen to in serverFD, with default protocol for stream (TCP) */
+    /* Creating a socket to listen to in serverFD, 
+    with default protocol for stream (TCP (0)) */
+    serverFD = socket(AF_INET, SOCK_STREAM, 0);
 
     /* initialize adresses of server */
     bzero((void *) &serverINETAdress, sizeof(serverINETAdress));
@@ -63,17 +68,22 @@ static void set_up_server(void) {
     int on = 1;
     setsockopt(serverFD, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
     
-    /* TODO bind socket to address */
+    /* Bind socket to server INET address */
+    bind(serverFD, (struct sockaddr*)&serverINETAdress, sizeof(serverINETAdress)); 
 
-    /* TODO listen to socket */
+    /* Passivly listen to selected socket, MAXQUEUE(5) */
+    listen(serverFD, MAXQUEUE);
+
 }
 
 static void server_loop(void) {
-    for (;/* EVER */;) {
+    for (;/* EVER and ever */;) {
         struct sockaddr_in clientINETAdress;
         socklen_t clientLen = sizeof(clientINETAdress);
         
-        /* TODO accept connection from serverFD into clientFD */
+        /* Accept connection from serverFD into clientFD */
+        clientFD = accept(serverFD, (struct sockaddr *)&clientINETAdress, &clientLen);
+
         fprintf(stdout, "connected clientFD %d from IPadress %s\n",
                 clientFD, inet_ntoa(clientINETAdress.sin_addr));
         
@@ -92,19 +102,35 @@ static void server_loop(void) {
 static void server_handler(void) {
     unsigned long bufferlen = 0;
     for (;/* EVER */;) {
-        /* TODO receive message length...remember to check for errors! */
+
+        /* Receiving message length, checking for errors */
+        if(recv(clientFD, &bufferlen, sizeof(bufferlen), 0) == -1) {
+            fprintf(stderr, "Error when receiving message length. errno: %d", errno);
+        }
+
         fprintf(stdout, "reading %lu bytes\n", bufferlen);
+
         if (bufferlen > 0) {
-            
-            /* TODO receive message contents...remember to check for errors! */
-            /* TODO deal with command "exit"
-             or deal with command "cd"
-             or deal with anything else using popen
+
+            char reply[MAXOUTPUT];
+            memset(&reply, 0, MAXOUTPUT);
+
+            char *message = (char *) calloc(1, bufferlen);
+
+            if(recv(clientFD, message, bufferlen, 0) == -1){
+                fprintf(stderr, "an error occured, errno: %d\n", errno);
+                server_handler();
+            }
+
+            if (strncmp(message, "exit", 4) == 0){
+                clean_up(0);
+                return;
+            }
              
-             forward responses to the client and terminate with a bufferlength 0
-             */
+            /* forward responses to the client and terminate with a bufferlength 0 */
             /* TODO remember to allocate and free the receive buffer */
-            
+
+            free(message);
             bufferlen = 0; // reset bufferlen
         }
     }
