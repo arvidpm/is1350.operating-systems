@@ -67,12 +67,12 @@ static void client_handler() {
         fgets(cmd, MAXCMD, stdin);
         
         /* Length of input string */
-        int charlen = strlen(cmd);
+        unsigned long charlen = strlen(cmd);
 
         /* Sends size of string length */
         send(socketFD, &charlen, sizeof(charlen), 0);
         
-        /* Sends length of string */
+        /* Sends string and length of string */
         send(socketFD, cmd, strlen(cmd), 0);
 
         /* If command was "exit" we should also terminate on this side */
@@ -103,8 +103,12 @@ static void handle_reply() {
             fprintf(stderr, "Error when receiving message. errno: %d", errno);
         }
 
+
+        if(*reply == -1){
+            fprintf(stdout, "unable to execute\n");
+        }
         /* Print message to stdout */
-        fprintf(stdout ,"%s", reply);
+        fprintf(stdout ,"\nserver replied: %s", reply);
         
         /* Free the receive buffer */
         free(reply);

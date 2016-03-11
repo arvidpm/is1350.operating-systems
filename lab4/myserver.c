@@ -108,14 +108,24 @@ static void server_handler(void) {
             fprintf(stderr, "Error when receiving message length. errno: %d", errno);
         }
 
-        fprintf(stdout, "reading %lu bytes\n", bufferlen);
+        fprintf(stdout, "reading %lu bytes\n", bufferlen-1);
 
         if (bufferlen > 0) {
 
             char reply[MAXOUTPUT];
+
+            /* The C library function void 
+            *memset(void *str, int c, size_t n) 
+            copies the character c (an unsigned char) 
+            to the first n characters of the string pointed to, 
+            by the argument str.*/
             memset(&reply, 0, MAXOUTPUT);
 
-            char *message = (char *) calloc(1, bufferlen);
+            /*The C library function void 
+            *memset(void *str, int c, size_t n) copies the character c 
+            (an unsigned char) to the first n characters of the 
+            string pointed to, by the argument str.*/
+            char *message = (char *) calloc(0, bufferlen);
 
             if(recv(clientFD, message, bufferlen, 0) == -1){
                 fprintf(stderr, "an error occured, errno: %d\n", errno);
@@ -124,12 +134,34 @@ static void server_handler(void) {
 
             if (strncmp(message, "exit", 4) == 0){
                 clean_up(0);
-                return;
             }
              
-            /* forward responses to the client and terminate with a bufferlength 0 */
-            /* TODO remember to allocate and free the receive buffer */
+            /* forward responses to the client and terminate with a bufferlength 0.
+            popen opens a process by creating a pipe, 
+            forking and invoking the shell. 
+            Command parameter is the message receeived from client. 
+            "r" means read.popen returns a stream that can be read.*/
 
+            else {
+
+                /* The popen() function opens a process by creating 
+                a pipe, forking, and invoking the shell. */
+                FILE* file = popen(message, "r");
+
+                while(read(fileno(file), reply, MAXOUTPUT)) {
+
+                    unsigned long len = strlen(reply);
+                    send(clientFD, &len, sizeof(len), 0);
+                    send(clientFD, reply, len, 0);
+                    memset(&reply, 0, MAXOUTPUT);
+
+                }
+
+                send(clientFD, "", 1, 0);
+                pclose(file);
+            }
+
+            /* Freeing the receive buffer */
             free(message);
             bufferlen = 0; // reset bufferlen
         }
