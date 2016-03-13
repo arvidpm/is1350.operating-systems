@@ -108,7 +108,7 @@ static void handle_reply() {
             fprintf(stdout, "unable to execute\n");
         }
         /* Print message to stdout */
-        fprintf(stdout ,"\nserver replied: %s", reply);
+        fprintf(stdout ,"\n%s\n", reply);
         
         /* Free the receive buffer */
         free(reply);
