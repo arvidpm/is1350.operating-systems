@@ -52,8 +52,17 @@ int main(int argc, char *argv[]) {
 static void set_up_server(void) {
     struct sockaddr_in serverINETAdress;
     
-    /* Creating a socket to listen to in serverFD, 
-    with default protocol for stream (TCP (0)) */
+    /* 
+    SOCK_STREAM = Provides sequenced, reliable, two-way, 
+    connection-based byte streams. An out-of-band data transmission 
+    mechanism may be supported.
+    
+    AF_INET = IPv4 Internet protocols
+
+    Creating a socket to listen to in serverFD, 
+    with default protocol for stream (TCP (0))
+
+    */
     serverFD = socket(AF_INET, SOCK_STREAM, 0);
 
     /* initialize adresses of server */
@@ -103,7 +112,16 @@ static void server_handler(void) {
     unsigned long bufferlen = 0;
     for (;/* EVER */;) {
 
-        /* Receiving message length, checking for errors */
+        /* Receiving message length, checking for errors,
+        0 = flags 
+        
+        The  recv(),  recvfrom(),  and  recvmsg()  calls  are  used to receive messages from a
+        socket.  They may be used to receive data on both connectionless  and  connection-ori‐
+        ented  sockets.   This page first describes common features of all three system calls,
+        and then describes the differences between the calls.
+
+
+        */
         if(recv(clientFD, &bufferlen, sizeof(bufferlen), 0) == -1) {
             fprintf(stderr, "Error when receiving message length. errno: %d", errno);
         }
@@ -121,12 +139,10 @@ static void server_handler(void) {
             by the argument str.*/
             memset(&reply, 0, MAXOUTPUT);
 
-            /*The C library function void 
-            *memset(void *str, int c, size_t n) copies the character c 
-            (an unsigned char) to the first n characters of the 
-            string pointed to, by the argument str.*/
+            /* Allocate memory for recieved message */
             char *message = (char *) calloc(0, bufferlen);
 
+            /* Recieving the message */
             if(recv(clientFD, message, bufferlen, 0) == -1){
                 fprintf(stderr, "an error occured, errno: %d\n", errno);
                 server_handler();
@@ -145,9 +161,21 @@ static void server_handler(void) {
             else {
 
                 /* The popen() function opens a process by creating 
-                a pipe, forking, and invoking the shell. */
+                a pipe, forking, and invoking the shell. 
+
+                FILE *popen(const char *command, const char *type);
+                */
                 FILE* file = popen(message, "r");
 
+
+                /*
+                read()  attempts  to  read  up  to count bytes from file descriptor fd into the buffer
+                starting at buf.
+
+
+                The function fileno() examines the argument 
+                stream and returns its integer descriptor.
+                */
                 while(read(fileno(file), reply, MAXOUTPUT)) {
 
                     unsigned long len = strlen(reply);
@@ -158,6 +186,12 @@ static void server_handler(void) {
                 }
 
                 send(clientFD, "", 1, 0);
+
+                /* popen, pclose - pipe stream to or from a process
+
+                The pclose() function waits for the associated process 
+                to terminate and returns the exit status of the 
+                command as returned by wait4(2). */
                 pclose(file);
             }
 
