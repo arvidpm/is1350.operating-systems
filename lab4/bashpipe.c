@@ -40,29 +40,29 @@ int main(int argc, char **argv) {
         printf("\nChild 1: preparing 'ls -la'\n");
         printf("------------------------------\n");
 
+        /* Closing read end of the pipe. */
+        close(fd[0]);
+
         /* Duplicate a file descriptor.
         The dup2() system call performs the same task as dup(), 
         but instead of using the lowest-numbered unused file descriptor, 
         it uses the descriptor number specified in newfd (=STDOUT). */
         dup2(fd[1], 1);
-
-        /* Closing write end of the pipe. */
-        close(fd[1]);
-        /* Closing read end of the pipe. */
-        close(fd[0]);
-
+        
         /* int execlp(const char *file, const char *arg, ...);
         The  execlp(), execvp(), and execvpe() functions duplicate 
         the actions of the shell in searching for an executable file 
         if the specified filename does not contain a '(/)' character.*/
         execlp("ls", "ls", "-la", NULL);
 
-        _exit(EXIT_SUCCESS);
+        /* Closing write end of the pipe. */
+        close(fd[1]);
     }
 
     else {
 
         /* Forking second child */
+        sleep(1);
         pid2 = fork();
 
         if (pid2 == -1) {
@@ -76,16 +76,14 @@ int main(int argc, char **argv) {
             printf("\nChild 2: preparing 'less'\n");
             printf("------------------------------\n");
 
+            /* Closing write end of the pipe. */
+            close(fd[1]);
+
             /* Duplicate a file descriptor.
             The dup2() system call performs the same task as dup(), 
             but instead of using the lowest-numbered unused file descriptor, 
             it uses the descriptor number specified in newfd (=STDIN). */
             dup2(fd[0], 0);
-
-            /* Closing write end of the pipe. */
-            close(fd[1]);
-            /* Closing read end of the pipe. */
-            close(fd[0]);
             
             /* int execlp(const char *file, const char *arg, ...);
             The  execlp(), execvp(), and execvpe() functions duplicate 
@@ -93,7 +91,8 @@ int main(int argc, char **argv) {
             if the specified filename does not contain a '(/)' character.*/
             execlp("less", "less", NULL);
 
-            _exit(EXIT_SUCCESS);
+            /* Closing read end of the pipe. */
+            close(fd[0]);
 
         }
 
@@ -106,7 +105,6 @@ int main(int argc, char **argv) {
     /* Waiting for children to complete */
     wait(&pid1);
     wait(&pid2);
-
 
     return 0;
     
