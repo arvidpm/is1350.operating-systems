@@ -64,7 +64,7 @@ int main(void) {
 
     /* Ignores SIGINT signals, print if error returned */
     if (signal(SIGINT, SIG_IGN) == SIG_ERR)
-        printf("\ncan't ignore SIGINT\n");
+        printf("\nignore SIGINT\n");
 
     /* Handles SIGUSR1 signals, print if error returned */
     if (signal(SIGUSR1, usr1a) == SIG_ERR)
